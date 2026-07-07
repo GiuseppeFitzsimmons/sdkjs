@@ -53,7 +53,8 @@ var tableSpacingMinValue = 0.02;//0.02мм
 
 var EditorPageViewMode = {
 	OnePage   : 0,
-	MultiPage : 1
+	MultiPage : 1,
+	Book      : 2
 };
 
 function CEditorPage(api)
@@ -1669,7 +1670,7 @@ function CEditorPage(api)
 
 	this.isUseMultiPageView = function()
 	{
-		if (this.pageViewMode !== EditorPageViewMode.MultiPage)
+		if (this.pageViewMode !== EditorPageViewMode.MultiPage && this.pageViewMode !== EditorPageViewMode.Book)
 			return false;
 		if (this.m_nZoomType !== 0)
 			return false;
@@ -3108,6 +3109,48 @@ function CEditorPage(api)
 				this.m_dDocumentHeight += _pageHeight;
 			}
 		}
+		else if (this.pageViewMode === EditorPageViewMode.Book)
+		{
+			// Book view: always 2 pages side by side, first page on the right
+			let pageCount = this.m_oDrawingDocument.m_lPagesCount;
+			let maxPageW = 0;
+			let maxPageH = 0;
+
+			for (let i = 0; i < pageCount; i++)
+			{
+				let mm_w = this.m_oDrawingDocument.m_arrPages[i].width_mm;
+				let mm_h = this.m_oDrawingDocument.m_arrPages[i].height_mm;
+
+				if (mm_w > this.m_dDocumentPageWidth)
+					this.m_dDocumentPageWidth = mm_w;
+				if (mm_h > this.m_dDocumentPageHeight)
+					this.m_dDocumentPageHeight = mm_h;
+
+				let _pageWidth = (mm_w * dKoef) >> 0;
+				let _pageHeight = (mm_h * dKoef + 0.5) >> 0;
+
+				if (_pageWidth > maxPageW)
+					maxPageW = _pageWidth;
+				if (_pageHeight > maxPageH)
+					maxPageH = _pageHeight;
+			}
+
+			// Document width = two pages + gap between them
+			this.m_dDocumentWidth = maxPageW * 2 + this.viewBetweenPagesHor;
+
+			// First spread: blank left + page 1 right
+			this.m_dDocumentHeight += this.viewBetweenPagesVer;
+			this.m_dDocumentHeight += maxPageH;
+
+			// Remaining spreads: pairs of pages (2-3, 4-5, 6-7, ...)
+			let remainingPages = pageCount - 1;
+			let spreads = Math.ceil(remainingPages / 2);
+			for (let s = 0; s < spreads; s++)
+			{
+				this.m_dDocumentHeight += this.viewBetweenPagesVer;
+				this.m_dDocumentHeight += maxPageH;
+			}
+		}
 		else
 		{
 			let editorWidth = this.m_oEditor.HtmlElement.width;
@@ -3267,6 +3310,108 @@ function CEditorPage(api)
 					this.m_oDrawingDocument.m_lDrawingEnd = i - 1;
 					bIsFoundEnd = true;
 				}
+			}
+		}
+		else if (this.pageViewMode === EditorPageViewMode.Book)
+		{
+			// Book view: page 1 on right, then pairs (2-3, 4-5, ...)
+			let pageCount = this.m_oDrawingDocument.m_lPagesCount;
+			let maxPageW = 0;
+			let maxPageH = 0;
+
+			for (let i = 0; i < pageCount; i++)
+			{
+				let _pw = (this.m_oDrawingDocument.m_arrPages[i].width_mm * dKoef + 0.5) >> 0;
+				let _ph = (this.m_oDrawingDocument.m_arrPages[i].height_mm * dKoef + 0.5) >> 0;
+				if (_pw > maxPageW) maxPageW = _pw;
+				if (_ph > maxPageH) maxPageH = _ph;
+			}
+
+			let spreadW = maxPageW * 2 + this.viewBetweenPagesHor;
+			let spreadLeft = hor_pos_median - (spreadW >> 1);
+
+			// First spread: blank left + page 0 on right
+			if (pageCount > 0)
+			{
+				let page = this.m_oDrawingDocument.m_arrPages[0];
+				let pageWidth  = (page.width_mm * dKoef + 0.5) >> 0;
+				let pageHeight = (page.height_mm * dKoef + 0.5) >> 0;
+				let drawRect = page.drawingPage;
+
+				let top = lStart + this.viewBetweenPagesVer - lCurrentTopInDoc;
+				drawRect.left = spreadLeft + maxPageW + this.viewBetweenPagesHor;
+				drawRect.top = top;
+				drawRect.right = drawRect.left + pageWidth;
+				drawRect.bottom = drawRect.top + pageHeight;
+				drawRect.pageIndex = 0;
+
+				lStart += (this.viewBetweenPagesVer + maxPageH);
+
+				if (false === bIsFoundFirst && drawRect.bottom > 0)
+				{
+					this.m_oDrawingDocument.m_lDrawingFirst = 0;
+					bIsFoundFirst = true;
+				}
+				if (false === bIsFoundEnd && drawRect.top > _height)
+				{
+					this.m_oDrawingDocument.m_lDrawingEnd = -1;
+					bIsFoundEnd = true;
+				}
+			}
+
+			// Remaining spreads: pairs (1-2, 3-4, 5-6, ...)
+			for (let i = 1; i < pageCount; i += 2)
+			{
+				let top = lStart + this.viewBetweenPagesVer - lCurrentTopInDoc;
+
+				let pageL = this.m_oDrawingDocument.m_arrPages[i];
+				let pageWidthL  = (pageL.width_mm * dKoef + 0.5) >> 0;
+				let pageHeightL = (pageL.height_mm * dKoef + 0.5) >> 0;
+				let drawRectL = pageL.drawingPage;
+
+				drawRectL.left = spreadLeft;
+				drawRectL.top = top;
+				drawRectL.right = drawRectL.left + pageWidthL;
+				drawRectL.bottom = drawRectL.top + pageHeightL;
+				drawRectL.pageIndex = i;
+
+				if (false === bIsFoundFirst && drawRectL.bottom > 0)
+				{
+					this.m_oDrawingDocument.m_lDrawingFirst = i;
+					bIsFoundFirst = true;
+				}
+				if (false === bIsFoundEnd && drawRectL.top > _height)
+				{
+					this.m_oDrawingDocument.m_lDrawingEnd = i - 1;
+					bIsFoundEnd = true;
+				}
+
+				if (i + 1 < pageCount)
+				{
+					let pageR = this.m_oDrawingDocument.m_arrPages[i + 1];
+					let pageWidthR  = (pageR.width_mm * dKoef + 0.5) >> 0;
+					let pageHeightR = (pageR.height_mm * dKoef + 0.5) >> 0;
+					let drawRectR = pageR.drawingPage;
+
+					drawRectR.left = spreadLeft + maxPageW + this.viewBetweenPagesHor;
+					drawRectR.top = top;
+					drawRectR.right = drawRectR.left + pageWidthR;
+					drawRectR.bottom = drawRectR.top + pageHeightR;
+					drawRectR.pageIndex = i + 1;
+
+					if (false === bIsFoundFirst && drawRectR.bottom > 0)
+					{
+						this.m_oDrawingDocument.m_lDrawingFirst = i + 1;
+						bIsFoundFirst = true;
+					}
+					if (false === bIsFoundEnd && drawRectR.top > _height)
+					{
+						this.m_oDrawingDocument.m_lDrawingEnd = i;
+						bIsFoundEnd = true;
+					}
+				}
+
+				lStart += (this.viewBetweenPagesVer + maxPageH);
 			}
 		}
 		else

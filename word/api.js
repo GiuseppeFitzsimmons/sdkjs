@@ -8687,6 +8687,23 @@ background-repeat: no-repeat;\
 		}
 	};
 
+	asc_docs_api.prototype.SetBookViewMode = function(isBook) {
+		if (!this.WordControl)
+			return;
+		let oldValue = this.WordControl.pageViewMode;
+		this.WordControl.pageViewMode = isBook ? AscCommonWord.EditorPageViewMode.Book : AscCommonWord.EditorPageViewMode.OnePage;
+		if (oldValue !== this.WordControl.pageViewMode)
+		{
+			if (this.WordControl.m_oEditor && this.WordControl.m_oEditor.HtmlElement)
+				this.WordControl.m_oEditor.HtmlElement.fullRepaint = true;
+			this.WordControl.zoom_Fire(0, this.WordControl.m_nZoomValue);
+		}
+	};
+
+	asc_docs_api.prototype.GetBookViewMode = function() {
+		return this.WordControl && this.WordControl.pageViewMode === AscCommonWord.EditorPageViewMode.Book;
+	};
+
 	asc_docs_api.prototype.asc_SetDocumentPlaceChangedEnabled = function(bEnabled)
 	{
 		if (this.WordControl)
@@ -15407,6 +15424,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['GetCurrentVisiblePage']                     = asc_docs_api.prototype.GetCurrentVisiblePage;
 	asc_docs_api.prototype['GetCurrentVisiblePages']                    = asc_docs_api.prototype.GetCurrentVisiblePages;
 	asc_docs_api.prototype['SetMultipageViewMode']                      = asc_docs_api.prototype.SetMultipageViewMode;
+	asc_docs_api.prototype['SetBookViewMode']                          = asc_docs_api.prototype.SetBookViewMode;
+	asc_docs_api.prototype['GetBookViewMode']                          = asc_docs_api.prototype.GetBookViewMode;
 	asc_docs_api.prototype['GetMultipageViewMode']                      = asc_docs_api.prototype.GetMultipageViewMode;
 	asc_docs_api.prototype['asc_setAutoSaveGap']                        = asc_docs_api.prototype.asc_setAutoSaveGap;
 	asc_docs_api.prototype['asc_SetDocumentPlaceChangedEnabled']        = asc_docs_api.prototype.asc_SetDocumentPlaceChangedEnabled;
