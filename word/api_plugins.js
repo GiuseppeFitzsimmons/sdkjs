@@ -1444,6 +1444,51 @@
 	 * @since 9.0.3
 	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetCurrentBookmark.js
 	 */
+
+	// eo-cursor-methods
+	Api.prototype["pluginMethod_EOGetCursor"] = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.GetContentPosition)
+			return null;
+		let docPos = logicDocument.GetContentPosition(false);
+		if (!docPos || !docPos.length)
+			return null;
+		let path = [];
+		for (let i = 0; i < docPos.length; ++i)
+			path.push(docPos[i].Position);
+		return path;
+	};
+	Api.prototype["pluginMethod_EOSetCursor"] = function(path)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument || !logicDocument.SetContentPosition || !path || !path.length)
+			return false;
+		let docPos = [];
+		let node = logicDocument;
+		for (let i = 0; i < path.length; ++i)
+		{
+			if (!node)
+				break;
+			let pos = path[i];
+			let content = node.Content;
+			if (content && content.length)
+				pos = Math.min(content.length - 1, Math.max(0, pos));
+			else if (pos < 0)
+				pos = 0;
+			docPos.push({Class : node, Position : pos});
+			node = (content && content[pos]) ? content[pos] : null;
+		}
+		if (!docPos.length)
+			return false;
+		logicDocument.RemoveSelection && logicDocument.RemoveSelection();
+		logicDocument.SetContentPosition(docPos, 0, 0);
+		if (logicDocument.RecalculateCurPos)
+			logicDocument.RecalculateCurPos();
+		if (logicDocument.Document_UpdateSelectionState)
+			logicDocument.Document_UpdateSelectionState();
+		return true;
+	};
 	Api.prototype["pluginMethod_GetCurrentBookmark"] = function()
 	{
 		let logicDocument = this.private_GetLogicDocument();

@@ -237,7 +237,16 @@
 			{name : "Tabloid Oversize", w_mm : 304.8, h_mm : 457.1, w_tw : 17282, h_tw : 25918},
 			{name : "ROC 16K", w_mm : 196.8, h_mm : 273, w_tw : 11164, h_tw : 15485},
 			{name : "Envelope Coukei 3", w_mm : 119.9, h_mm : 234.9, w_tw : 6798, h_tw : 13319},
-			{name : "Super B/A3", w_mm : 330.2, h_mm : 482.5, w_tw : 18722, h_tw : 27358}
+			{name : "Super B/A3", w_mm : 330.2, h_mm : 482.5, w_tw : 18722, h_tw : 27358},
+					{name : "Trade Paperback (small)", w_mm : 139.7, h_mm : 215.9, w_tw : 7921, h_tw : 12247},
+					{name : "Trade Paperback (Large)", w_mm : 152.4, h_mm : 228.6, w_tw : 8641, h_tw : 12962},
+					{name : "6.14x9.21", w_mm : 156, h_mm : 233.9, w_tw : 8845, h_tw : 13262},
+					{name : "7x10", w_mm : 177.8, h_mm : 254, w_tw : 10081, h_tw : 14401},
+					{name : "8.25x11", w_mm : 209.5, h_mm : 279.4, w_tw : 11879, h_tw : 15842},
+					{name : "Mass-Market Paperback", w_mm : 107.95, h_mm : 174.5, w_tw : 6121, h_tw : 9894},
+					{name : "A Format", w_mm : 110, h_mm : 178, w_tw : 6237, h_tw : 10093},
+					{name : "Penguin", w_mm : 111, h_mm : 181, w_tw : 6294, h_tw : 10263},
+					{name : "B Format", w_mm : 138, h_mm : 216, w_tw : 7825, h_tw : 12304}
 		];
 		this.sizeEpsMM = 0.5;
 		this.getSize   = function(widthMm, heightMm)
