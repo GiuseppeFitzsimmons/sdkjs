@@ -7128,6 +7128,17 @@ CStyle.prototype.IsExpressStyle = function(oStyles)
 		|| oStyles.Default.EndnoteText === this.Id))
 		return true;
 
+	// Некоторые редакторы (например, экспорт из Google Docs) не выставляют флаг w:qFormat
+	// для встроенных стилей (Normal, Heading 1-9, Title, Subtitle). В результате эти стили
+	// определены и используются в документе, но не отображаются в галерее стилей верхней панели.
+	// Если флаг qFormat явно не задан (null/undefined), но стиль является встроенным стилем
+	// параграфа по имени, показываем его в галерее.
+	if ((null === this.qFormat || undefined === this.qFormat)
+		&& styletype_Paragraph === this.Type
+		&& AscWord.getDefaultStyleObject
+		&& AscWord.getDefaultStyleObject(this.Name))
+		return true;
+
 	return false;
 };
 /**
