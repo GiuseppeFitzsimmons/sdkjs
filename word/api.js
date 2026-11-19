@@ -8696,8 +8696,20 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.SetMultipageViewMode = function(isMultiPage) {
 		if (!this.WordControl)
 			return;
+		this.private_SetPageViewMode(isMultiPage ? AscCommonWord.EditorPageViewMode.MultiPage : AscCommonWord.EditorPageViewMode.OnePage);
+	};
+	// eo-book-view: two-page book spreads, first page alone on the right.
+	asc_docs_api.prototype.GetBookViewMode = function() {
+		return !!(this.WordControl && this.WordControl.pageViewMode === AscCommonWord.EditorPageViewMode.Book);
+	};
+	asc_docs_api.prototype.SetBookViewMode = function(isBook) {
+		if (!this.WordControl)
+			return;
+		this.private_SetPageViewMode(isBook ? AscCommonWord.EditorPageViewMode.Book : AscCommonWord.EditorPageViewMode.OnePage);
+	};
+	asc_docs_api.prototype.private_SetPageViewMode = function(mode) {
 		let oldValue = this.WordControl.pageViewMode;
-		this.WordControl.pageViewMode = isMultiPage ? AscCommonWord.EditorPageViewMode.MultiPage : AscCommonWord.EditorPageViewMode.OnePage;
+		this.WordControl.pageViewMode = mode;
 		if (oldValue !== this.WordControl.pageViewMode)
 		{
 			if (this.WordControl.m_oEditor && this.WordControl.m_oEditor.HtmlElement)
@@ -15501,6 +15513,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['GetCurrentVisiblePages']                    = asc_docs_api.prototype.GetCurrentVisiblePages;
 	asc_docs_api.prototype['SetMultipageViewMode']                      = asc_docs_api.prototype.SetMultipageViewMode;
 	asc_docs_api.prototype['GetMultipageViewMode']                      = asc_docs_api.prototype.GetMultipageViewMode;
+	asc_docs_api.prototype['SetBookViewMode']                           = asc_docs_api.prototype.SetBookViewMode;
+	asc_docs_api.prototype['GetBookViewMode']                           = asc_docs_api.prototype.GetBookViewMode;
 	asc_docs_api.prototype['asc_setAutoSaveGap']                        = asc_docs_api.prototype.asc_setAutoSaveGap;
 	asc_docs_api.prototype['asc_SetDocumentPlaceChangedEnabled']        = asc_docs_api.prototype.asc_SetDocumentPlaceChangedEnabled;
 	asc_docs_api.prototype['asc_SetViewRulers']                         = asc_docs_api.prototype.asc_SetViewRulers;

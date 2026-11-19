@@ -63,7 +63,10 @@ var tableSpacingMinValue = 0.02;//0.02мм
 
 var EditorPageViewMode = {
 	OnePage   : 0,
-	MultiPage : 1
+	MultiPage : 1,
+	// eo-book-view: two-page spreads like a printed book. Same row layout as
+	// MultiPage, but rows are fixed: page 1 alone on the right, then 2-3, 4-5...
+	Book      : 2
 };
 
 function CEditorPage(api)
@@ -1689,11 +1692,24 @@ function CEditorPage(api)
 
 	this.isUseMultiPageView = function()
 	{
-		if (this.pageViewMode !== EditorPageViewMode.MultiPage)
+		// eo-book-view: Book reuses the multi-page row layout (see isBookView).
+		if (this.pageViewMode !== EditorPageViewMode.MultiPage && this.pageViewMode !== EditorPageViewMode.Book)
 			return false;
 		if (this.m_nZoomType !== 0)
 			return false;
 		return true;
+	};
+
+	// eo-book-view: in book view, rows are fixed spreads instead of "as many
+	// pages as fit": page 0 starts its own row (alone, on the right), then every
+	// odd page index starts a new two-page row (1-2, 3-4 ... = pages 2-3, 4-5).
+	this.isBookView = function()
+	{
+		return this.pageViewMode === EditorPageViewMode.Book && this.isUseMultiPageView();
+	};
+	this.isBookRowStart = function(pageIndex)
+	{
+		return pageIndex === 0 || (pageIndex % 2) === 1;
 	};
 
 	this.getMultiPageRowMaxWidth = function()
@@ -3155,6 +3171,8 @@ function CEditorPage(api)
 				_this.m_dDocumentHeight += currentBlockH;
 			};
 
+			let isBook = this.isBookView();
+
 			for (let i = 0; i < this.m_oDrawingDocument.m_lPagesCount; i++)
 			{
 				let mm_w = this.m_oDrawingDocument.m_arrPages[i].width_mm;
@@ -3172,11 +3190,17 @@ function CEditorPage(api)
 				{
 					currentBlockW = _pageWidth;
 					currentBlockH = _pageHeight;
+					// eo-book-view: the lone first page occupies the right half of
+					// a spread, so reserve a page-width of space on its left.
+					if (isBook && 0 === i)
+						currentBlockW = _pageWidth + this.viewBetweenPagesHor + _pageWidth;
 					continue;
 				}
 
 				let testW = currentBlockW + this.viewBetweenPagesHor + _pageWidth;
-				if (testW > editorWidth)
+				// eo-book-view: break on spread boundaries, never on width.
+				let newRow = isBook ? this.isBookRowStart(i) : (testW > editorWidth);
+				if (newRow)
 				{
 					_checkBlock(this);
 					// new block
@@ -3303,6 +3327,7 @@ function CEditorPage(api)
 		else
 		{
 			let editorWidth = this.getMultiPageRowMaxWidth();
+			let isBook = this.isBookView();
 
 			let currentBlockW = 0;
 			let currentBlockH = 0;
@@ -3312,6 +3337,14 @@ function CEditorPage(api)
 
 				let left = hor_pos_median - (currentBlockW >> 1);
 				let top = lStart + _this.viewBetweenPagesVer - lCurrentTopInDoc;
+
+				// eo-book-view: the lone first page sits in the RIGHT half of its
+				// (reserved two-page-wide) row, leaving the left half blank.
+				if (isBook && 1 === currentBlockPages.length && 0 === currentBlockPages[0])
+				{
+					let firstW = (_this.m_oDrawingDocument.m_arrPages[0].width_mm * dKoef + 0.5) >> 0;
+					left += firstW + _this.viewBetweenPagesHor;
+				}
 
 				for (let i = 0, len = currentBlockPages.length; i < len; i++)
 				{
@@ -3356,12 +3389,18 @@ function CEditorPage(api)
 				{
 					currentBlockW = _pageWidth;
 					currentBlockH = _pageHeight;
+					// eo-book-view: reserve the blank left half of the first spread
+					// (must match CalculateDocumentSize exactly).
+					if (isBook && 0 === i)
+						currentBlockW = _pageWidth + this.viewBetweenPagesHor + _pageWidth;
 					currentBlockPages.push(i);
 					continue;
 				}
 
 				let testW = currentBlockW + this.viewBetweenPagesHor + _pageWidth;
-				if (testW > editorWidth)
+				// eo-book-view: break on spread boundaries, never on width.
+				let newRow = isBook ? this.isBookRowStart(i) : (testW > editorWidth);
+				if (newRow)
 				{
 					_checkBlock(this);
 
