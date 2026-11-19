@@ -131,7 +131,11 @@
 		
 		let lineInfo = this.Paragraph.Lines[line].Info;
 		
-		this.lineClip = (this.needClip && (lineInfo & paralineinfo_Clip)) || ((lineInfo & paralineinfo_ClipNonVisible) && editor && editor.ShowParaMarks);
+		// eo-no-line-clip: the second branch clips lines the same way whenever
+		// "show formatting marks" is on, so it must go too or titles stay cut off
+		// for users with ¶ enabled. Upstream original:
+		// this.lineClip = (this.needClip && (lineInfo & paralineinfo_Clip)) || ((lineInfo & paralineinfo_ClipNonVisible) && editor && editor.ShowParaMarks);
+		this.lineClip = false;
 		this.addLineClip();
 	};
 	ParagraphContentDrawState.prototype.endLine = function()
